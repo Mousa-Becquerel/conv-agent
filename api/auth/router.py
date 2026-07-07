@@ -17,7 +17,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from db import get_db
+from db.auth_session import get_auth_db
 from db.models import User
 from rate_limit import login_rate_limit
 
@@ -85,7 +85,7 @@ def _user_out(user: User) -> UserOut:
 @router.post("/login", response_model=TokenResponse)
 def login(
     payload: LoginRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_auth_db),
     _rl: None = Depends(login_rate_limit),
 ) -> TokenResponse:
     user = db.execute(
@@ -139,7 +139,7 @@ def me(user: User = Depends(current_user_required)) -> UserOut:
 
 # ---------- POST /auth/refresh ----------
 @router.post("/refresh", response_model=AccessTokenResponse)
-def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> AccessTokenResponse:
+def refresh(payload: RefreshRequest, db: Session = Depends(get_auth_db)) -> AccessTokenResponse:
     """Exchange a refresh token for a fresh access token. Does NOT rotate
     the refresh token — clients hold a single long-lived refresh until it
     expires, then have to re-login. Add rotation later if needed."""

@@ -16,7 +16,7 @@ from typing import Optional
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
-from db import get_db
+from db.auth_session import get_auth_db
 from db.models import User
 from logging_setup import user_id_var
 from sentry_setup import set_user as sentry_set_user
@@ -35,7 +35,7 @@ def _extract_bearer(authorization: Optional[str]) -> Optional[str]:
 
 async def current_user_required(
     authorization: Optional[str] = Header(default=None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_auth_db),
 ) -> User:
     """Required auth dependency. 401 on any missing/invalid/inactive case.
 
@@ -82,7 +82,7 @@ current_user = current_user_required
 
 async def optional_user(
     authorization: Optional[str] = Header(default=None),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_auth_db),
 ) -> Optional[User]:
     """Optional auth — returns None instead of raising when there's no token."""
     if not authorization:

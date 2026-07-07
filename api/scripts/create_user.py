@@ -29,7 +29,11 @@ from typing import Optional
 from sqlalchemy import select
 
 from auth.passwords import hash_password
-from db import SessionLocal
+# Use the auth-scoped session so users are written to AUTH_DATABASE_URL
+# (the shared Regalgrid users DB) when it's set; otherwise falls back to
+# DATABASE_URL. In both cases this is the same DB the /auth/login endpoint
+# reads from — never a schema mismatch.
+from db.auth_session import AuthSessionLocal as SessionLocal
 from db.models import User
 
 
