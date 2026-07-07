@@ -1,0 +1,130 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  :root {
+    /* Neutrals tuned to regalgrid.com: airy white surfaces with deep navy text. */
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;          /* #1f2937 deep slate-navy */
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --secondary: 220 14% 96%;           /* #f1f5f9 */
+    --secondary-foreground: 215 28% 17%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;    /* #64748b */
+    --accent: 220 14% 96%;
+    --accent-foreground: 215 28% 17%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;              /* #e2e8f0 */
+    --input: 220 13% 91%;
+    --radius: 0.875rem;
+
+    /* Regalgrid green — sampled from the logo's #6da819 dot. The primary
+       interactive color across the UI (buttons, citation chips, focus rings). */
+    --primary: 85 73% 38%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 85 73% 38%;
+
+    /* The six brand-mark colors — also used as the thin "rainbow strip"
+       under the conversation header. Match the logo SVG exactly. */
+    --brand-orange: 28 100% 47%;        /* #ee6c00 */
+    --brand-red: 357 99% 43%;           /* #d9000d */
+    --brand-yellow: 55 100% 50%;        /* #ffe800 */
+    --brand-green: 85 73% 38%;          /* #6da819 — same as primary */
+    --brand-blue: 204 100% 38%;         /* #0077c2 */
+    --brand-purple: 326 78% 35%;        /* #a01461 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Modern thin scrollbar, applied globally. WebKit gets the styled pseudo-
+   elements; Firefox uses scrollbar-width / -color. The track stays
+   transparent so it blends into the surface; the thumb picks up the
+   muted-foreground tint and brightens on hover. The track-side `border`
+   trick produces a thumb that looks padded from the edge without
+   needing a separate gutter. Up/down buttons are hidden — they're a
+   legacy Windows pattern that breaks modern UIs. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.35);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.15s ease;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.6);
+}
+*::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+  width: 0;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Typing indicator for streaming */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.6; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+.typing-dot {
+  animation: typing-bounce 1.2s infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* Subtle dotted-grid background — evokes "grid" without being noisy. */
+.bg-grid-dots {
+  background-image: radial-gradient(
+    hsl(220 13% 88%) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* Brand strip: six thin slices of the Regalgrid logo colors. Used as a
+   decorative band under the conversation header. */
+.bg-brand-strip {
+  background-image: linear-gradient(
+    to right,
+    hsl(var(--brand-orange)) 0% 16.67%,
+    hsl(var(--brand-red)) 16.67% 33.33%,
+    hsl(var(--brand-yellow)) 33.33% 50%,
+    hsl(var(--brand-green)) 50% 66.67%,
+    hsl(var(--brand-blue)) 66.67% 83.33%,
+    hsl(var(--brand-purple)) 83.33% 100%
+  );
+}

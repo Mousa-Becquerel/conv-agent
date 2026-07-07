@@ -1,0 +1,23 @@
+# Store everything with LF in the repo. Windows checkouts get CRLF via
+# core.autocrlf=true; Linux stays LF. Shell + Python scripts must stay LF
+# on disk or the EC2 will refuse to run them.
+* text=auto eol=lf
+
+*.sh    text eol=lf
+*.py    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.caddy text eol=lf
+
+# Binary — leave alone.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.woff  binary
+*.woff2 binary

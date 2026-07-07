@@ -1,0 +1,159 @@
+# Production compose for conv-agent on the shared solar-intelligence-dev EC2.
+#
+# Serves under https://dev.solarintelligence.ai/conv-agent/ — same host as
+# ed-extract (at /sinergia/) and solar-intelligence (at /). Everything is
+# fully isolated from those apps except the shared Caddy ingress on :443.
+#
+# Invoked as:  docker compose -f docker-compose.prod.yml up -d --build
+#
+# What this deploys:
+#  - Postgres 16 (own container, own volume, own private network).
+#  - Qdrant (own container, own volume, own private network).
+#  - api (FastAPI, own image, joins BOTH the private net + the shared
+#    solar-intelligence_app-network so Caddy reaches it by name).
+#  - frontend (nginx + built SPA, only on the shared network — Caddy is
+#    the only ingress; no host port publishes).
+#  - Indexer stays as a one-shot service run via `docker compose run --rm`
+#    when the corpus needs (re)ingesting.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: conv-agent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: conv_agent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      POSTGRES_DB: conv_agent
+    volumes:
+      - conv_agent_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U conv_agent -d conv_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conv-agent-net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: conv-agent-qdrant
+    restart: unless-stopped
+    volumes:
+      - conv_agent_qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3 bash -c '</dev/tcp/localhost/6333' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conv-agent-net
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: "1.5"
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: conv-agent-api:latest
+    container_name: conv-agent-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Point at OUR postgres via its container name on the private net.
+      DATABASE_URL: postgresql+psycopg://conv_agent:${POSTGRES_PASSWORD}@postgres:5432/conv_agent
+      QDRANT_URL: http://qdrant:6333
+      # Production-only defaults; anything already in .env still wins.
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - conv-agent-net
+      - shared-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: "1.5"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Serve under /conv-agent/ — Vite bakes this into every asset URL
+        # and BASE_URL, so lib/config.ts derives API_BASE=/conv-agent/api.
+        VITE_BASE: /conv-agent/
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_SENTRY_ENVIRONMENT: ${VITE_SENTRY_ENVIRONMENT:-production}
+        VITE_SENTRY_RELEASE: ${VITE_SENTRY_RELEASE:-}
+    image: conv-agent-frontend:latest
+    container_name: conv-agent-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - shared-net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+
+  indexer:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    image: conv-agent-indexer:latest
+    container_name: conv-agent-indexer
+    profiles: ["indexer"]     # Only starts when explicitly requested.
+    volumes:
+      - ./sample:/data/sample:ro
+      - ./out:/app/out
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_URL=http://qdrant:6333
+      - COLLECTION_NAME=${COLLECTION_NAME:-conv_agent_chunks}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
+      - SAMPLE_DIR=/data/sample
+      - OUT_DIR=/app/out
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    networks:
+      - conv-agent-net
+
+networks:
+  # Private network for api ↔ postgres ↔ qdrant. Nothing else touches it.
+  conv-agent-net:
+    driver: bridge
+
+  # The shared bridge Caddy speaks over. External — owned by solar-intelligence.
+  shared-net:
+    external: true
+    name: solar-intelligence_app-network
+
+volumes:
+  conv_agent_pg_data:
+  conv_agent_qdrant_storage:

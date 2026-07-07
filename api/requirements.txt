@@ -1,0 +1,46 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.10.4
+# python-multipart is needed by FastAPI's UploadFile / multipart parsing —
+# we use it on /transcribe to receive recorded audio.
+python-multipart==0.0.20
+
+# LangChain — pinned to versions known to work together (matches QA_qdrant)
+langchain==0.3.14
+langchain-openai==0.2.14
+
+# Vector DB
+qdrant-client==1.12.1
+
+# OpenAI
+openai==1.60.0
+
+# PydanticAI for streaming structured output (openai extra only)
+pydantic-ai-slim[openai]==0.0.13
+# pydantic-ai 0.0.13 declares griffe>=1.3.2 but actually imports _griffe.*
+# which only exists in griffe < 0.49 — we pin in the Dockerfile.
+
+python-dotenv==1.0.1
+
+# Postgres: relational state (users, conversations, messages, qa_log).
+# psycopg 3 is the modern driver; SQLAlchemy 2.0 talks to it via
+# `postgresql+psycopg://...` URLs.
+sqlalchemy==2.0.36
+psycopg[binary]==3.2.3
+alembic==1.14.0
+
+# Auth: argon2 for password hashing (OWASP-recommended over bcrypt),
+# PyJWT for stateless tokens. Email validation comes from the
+# `email-validator` extra of pydantic.
+argon2-cffi==23.1.0
+pyjwt==2.10.0
+email-validator==2.2.0
+
+# Rate limiting: a tiny in-process sliding-window limiter we wrote in
+# api/rate_limit.py. No external dep — slowapi's decorator mangles
+# FastAPI's signature introspection, so we use a Depends-based approach.
+
+# Observability: structlog for context-rich JSON logs, sentry-sdk for
+# unhandled exception capture. Sentry is opt-in via SENTRY_DSN env var.
+structlog==24.4.0
+sentry-sdk[fastapi]==2.18.0
