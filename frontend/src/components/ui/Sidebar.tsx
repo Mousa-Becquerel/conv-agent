@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
+  ChevronLeft,
   LogOut,
   MessageSquare,
   PanelLeftClose,
@@ -62,6 +63,14 @@ function CollapsedRail({ onToggle, onNewConversation }: SidebarProps) {
       >
         <PenSquare className="w-4 h-4" />
       </button>
+      {/* Back-to-Sinergia — pinned to the bottom of the collapsed rail. */}
+      <a
+        href="/regalgrid/"
+        title="Torna al portale Sinergia"
+        className="mt-auto p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </a>
     </aside>
   );
 }
@@ -95,6 +104,19 @@ function ExpandedSidebar({
         >
           <PanelLeftClose className="w-4 h-4" />
         </button>
+      </div>
+
+      {/* Back-to-Sinergia pill — same-origin link back to the portal. */}
+      <div className="px-3 pb-2">
+        <a
+          href="/regalgrid/"
+          title="Torna al portale Sinergia"
+          className="w-full inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide text-muted-foreground border border-dashed border-primary/40 hover:border-primary hover:border-solid hover:bg-primary/10 hover:text-primary transition-colors"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          <span>Sinergia</span>
+          <span className="ml-auto text-[10px] font-normal text-muted-foreground/70">portale</span>
+        </a>
       </div>
 
       {/* New conversation */}
