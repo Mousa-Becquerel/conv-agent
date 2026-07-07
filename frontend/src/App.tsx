@@ -460,7 +460,12 @@ export function App() {
     return <PrivacyPage onBack={closePrivacy} />;
   }
 
-  const showWelcome = !activeId || activeMessages.length === 0;
+  // Show the welcome screen ONLY when there's neither a conversation loaded
+  // nor any optimistic messages queued locally. Using `||` here meant the
+  // first send stayed stuck on the welcome screen until `onMeta` set
+  // `activeId` — by that time segments were already arriving, so the user
+  // saw no loading state and the reply landed all at once.
+  const showWelcome = !activeId && activeMessages.length === 0;
 
   const mainView = activeLoading ? (
     <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
